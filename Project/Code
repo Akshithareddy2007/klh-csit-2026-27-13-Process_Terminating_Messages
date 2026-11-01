@@ -1,0 +1,81 @@
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <signal.h>
+
+int main() {
+    pid_t pid;
+    int status;
+
+    printf("====================================\n");
+    printf("   PROCESS TERMINATING MESSAGES\n");
+    printf("====================================\n");
+
+    // Scenario 1: Normal termination
+    printf("\n1. NORMAL PROCESS TERMINATION\n");
+
+    pid = fork();
+
+    if (pid == 0) {
+        printf("Child Process PID: %d\n", getpid());
+        printf("Child completed successfully.\n");
+        exit(0);
+    }
+    else if (pid > 0) {
+        waitpid(pid, &status, 0);
+
+        if (WIFEXITED(status))
+            printf("MESSAGE: Process terminated normally.\n");
+    }
+
+    // Scenario 2: Error termination
+    printf("\n2. ABNORMAL PROCESS TERMINATION\n");
+
+    pid = fork();
+
+    if (pid == 0) {
+        printf("Child Process PID: %d\n", getpid());
+        printf("An error occurred during execution.\n");
+        exit(1);
+    }
+    else if (pid > 0) {
+        waitpid(pid, &status, 0);
+
+        if (WIFEXITED(status))
+            printf("MESSAGE: Process terminated with exit code %d.\n",
+                   WEXITSTATUS(status));
+    }
+
+    // Scenario 3: Signal termination
+    printf("\n3. SIGNAL-BASED TERMINATION\n");
+
+    pid = fork();
+
+    if (pid == 0) {
+        printf("Child Process PID: %d\n", getpid());
+        printf("Child process is running...\n");
+        while (1)
+            pause();
+    }
+    else if (pid > 0) {
+        sleep(1);
+
+        printf("Parent is sending SIGTERM to child.\n");
+        kill(pid, SIGTERM);
+
+        waitpid(pid, &status, 0);
+
+        if (WIFSIGNALED(status))
+            printf("MESSAGE: Process terminated by signal %d.\n",
+                   WTERMSIG(status));
+    }
+
+    printf("\n====================================\n");
+    printf("   ALL TESTS COMPLETED\n");
+    printf("====================================\n");
+
+    return 0;
+}
